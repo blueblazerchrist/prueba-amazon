@@ -108,6 +108,12 @@
         .play {
             font-size: 10px;
         }
+        .error {
+            color: crimson;
+        }
+        .d-none {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -117,37 +123,38 @@
         </div>
         <div class="az-create-account-container">
             <div class="az-form">
+                @csrf
                 <h1>Crear Cuenta</h1>
                 <div class="form-group">
                     <label>Tu nombre</label>
-                    <input type="text" name="name" id="">
-{{--                    <span>--}}
-{{--                        <i>i</i>La contraseña debe contener al menos seis caracteres.--}}
-{{--                    </span>--}}
+                    <input type="text" name="name" id="name">
+                    <span class="d-none">
+                        La contraseña debe contener al menos seis caracteres.
+                    </span>
                 </div>
                 <div class="form-group">
                     <label>Correo electronico</label>
-                    <input type="email" name="email" id="">
-{{--                    <span>--}}
-{{--                        <i>i</i>La contraseña debe contener al menos seis caracteres.--}}
-{{--                    </span>--}}
+                    <input type="email" name="email" id="email" >
+                    <span class="d-none">
+                        La contraseña debe contener al menos seis caracteres.
+                    </span>
                 </div>
                 <div class="form-group">
                     <label>Contraseña</label>
-                    <input type="password" name="password" placeholder="Debe tener al menos 6 caracteres" id="">
+                    <input type="password" name="password" id="password" placeholder="Debe tener al menos 6 caracteres" >
                     <span>
                         <i>i</i>La contraseña debe contener al menos seis caracteres.
                     </span>
                 </div>
                 <div class="form-group">
                     <label>Vuelve a escribir la contraseña</label>
-                    <input type="password" name="password" id="">
-{{--                    <span>--}}
-{{--                        <i>i</i>La contraseña debe contener al menos seis caracteres.--}}
-{{--                    </span>--}}
+                    <input type="password" name="c_password" id="c_password">
+                    <span class="d-none">
+                        La contraseña debe contener al menos seis caracteres.
+                    </span>
                 </div>
                 <div class="az-container-btn">
-                    <button class="az-btn" >Crear tu cuenta de amazon</button>
+                    <button class="az-btn" onclick="registerUser()" >Crear tu cuenta de amazon</button>
                 </div>
                 <div class="az-term-and-cond">
                     Al crear una cuenta, aceptas las <span style="color: #3a81be; cursor: pointer">Condiciones de Uso</span> y el <span style="color: #3a81be; cursor: pointer">Aviso de Privacidad</span> de Amazon.
@@ -159,5 +166,70 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function registerUser() {
+            const errorElements = document.getElementsByClassName('error');
+            if(errorElements.length > 0) {
+                for (const errorElement of errorElements) {
+                    errorElement.classList.add('d-none');
+                }
+            }
+            const myHeaders = new Headers();
+            myHeaders.append("Accept", "application/json");
+            myHeaders.append("Content-Type", "application/json");
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const cPassword = document.getElementById('c_password').value;
+
+            if(password !== cPassword) {
+                const cpass = document.getElementById('c_password');
+                cpass.nextElementSibling.innerHTML = 'Las contraseñas no coinciden'
+                cpass.nextElementSibling.classList.remove('d-none');
+                cpass.nextElementSibling.classList.add('error');
+                return;
+            }
+
+            const raw = JSON.stringify({
+                "name": name,
+                "email": email,
+                "password": password,
+                "c_password": cPassword
+            });
+
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+            };
+
+            fetch("http://192.168.1.21:8080/api/register", requestOptions)
+                .then((response) => {
+                    return response.json()
+                })
+                .then((result) => {
+                    if(result.errors) {
+                        const errors = result.errors;
+                        for (const field in errors) {
+                            if(result.errors.hasOwnProperty(field)) {
+                                const error = errors[field][0];
+                                const fieldElement = document.getElementById(`${field}`);
+                                const errorContainer = fieldElement.nextElementSibling;
+                                errorContainer.classList.remove('d-none');
+                                errorContainer.classList.add('error');
+                                errorContainer.innerHTML = error;
+                            }
+                        }
+                    } else {
+                        alert('Gracias por registrarte');
+                    }
+                })
+                .catch((error) => {
+                    console.error(error)
+                });
+        }
+    </script>
 </body>
 </html>
